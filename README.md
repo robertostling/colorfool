@@ -16,17 +16,17 @@ I | 1+      | n -- n+1  | increment by 1
 J | BRANCH  | --        | word at IP+1 -> IP
 F |         | --        | like BRANCH but push IP+1 first, high-level call
 L | LIT     | -- x      | push word at IP+1
-O | 2*      | n -- n*2  | double
-P | >R      | x --      | push to return stack
-Q | R>      | -- x      | pop from return stack
+O | 2\*     | n -- n\*2  | double
+P | \>R     | x --      | push to return stack
+Q | R\>     | -- x      | pop from return stack
 R | KEY     | -- c      | read one character
 S | SWAP    | x y -- y x | swap TOS and NOS
 V | DROP    | x --      | drop TOS
 ; | EXIT    | --        | exit from subroutine
 @ | @       | a -- x    | load TOS from address in TOS
 ! | !       | x a --    | store NOS to address in TOS
-+ | +       | n m -- n+m | add TOS to NOS
-* | *       | n m -- n\*m | multiply TOS to NOS
+\+ | \+     | n m -- n+m | add TOS to NOS
+\* | \*     | n m -- n\*m | multiply TOS to NOS
 - | -       | n m -- n-m | subtract TOS from NOS
 & | &       | n m -- n&m | bitwise and TOS to NOS
 % | /MOD    | n m -- n%m n/m | division with remainder
