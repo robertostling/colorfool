@@ -8,7 +8,7 @@ of the editor, viewing a 64x32 block of source code.
 
 ## Native words
 
-| op  | Forth | Arguments | Description
+| Op  | Forth | Arguments | Description
 | --- | ----- | --------- | ----------
 | B | BYE     | --        | terminate
 | D | DUP     | x -- x x  | duplicate TOS
@@ -36,17 +36,22 @@ of the editor, viewing a 64x32 block of source code.
 
 ## Kernel definitions
 
-, | ,       | x --      | append value to heap
-# |         | -- 0      | push the constant 0
-. |         | x --      | compile LIT x
-[ | IF      | -- a      |
-\| | ELSE   | a -- a    |
-] | THEN    | a --      |
-U |         | a1 n1 a2 n2 -- b | string equality
-K | .       | n --      | output decimal integer
-A |         | a1 n a2 -- a3 | lookup string (a1 n) in dictionary (a2)
-W | CR      | --        | print a newline
-T | TYPE    | a n --    | print a string
-C | [CHAR]  | -- c      | push the following (red) character
-" | S"      | -- a n    | literal string (note: not compiling anything)
-$ | VARIABLE | --       | use like (red)#(magenta)n(red)$
+| Op  | Forth | Arguments | Description
+| --- | ----- | --------- | ----------
+| , | ,       | x --      | append value to heap
+| \# |        | -- 0      | push the constant 0
+| . |         | x --      | compile LIT x
+| { | IF      | -- a      |
+| \| | ELSE   | a -- a    |
+| } | THEN    | a --      |
+| [ | BEGIN   | -- a      | start of infinite loop
+| ] | AGAIN   | a --      | end of infinite loop
+| N | NOT     | b1 -- b2  | logical not
+| U |         | a1 n1 a2 n2 -- b | string equality
+| K | .       | n --      | output decimal integer
+| A |         | a1 n a2 -- a3 | lookup string (a1 n) in dictionary (a2)
+| W | CR      | --        | print a newline
+| T | TYPE    | a n --    | print a string
+| C | [CHAR]  | -- c      | push the following (red) character
+| " | S"      | -- a n    | literal string (note: not compiling anything)
+| $ | VARIABLE | x --     | global variable
