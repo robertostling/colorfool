@@ -1,12 +1,134 @@
 # colorfool
 
 This is a simple programming language based on Chuck Moore's colorForth as
-well as my own FOOL (Forth On One Line) language. We start with a screenshot
-of the editor, viewing a 64x32 block of source code.
+well as my own FOOL (Forth On One Line) language. The main novelty is the use
+of (sort of) human-readable machine level code, and the compiler consists of
+source/machine code translating itself into more efficient source/machine
+code. In its current virtual machine implementation, it can also be viewed as
+a special kind of token-threaded Forth interpreter.
+
+To make the above more concrete, we start with a screenshot
+of the editor. In the Forth tradition, this is viewing a 64x32 block of code.
 
 ![Contents of blocks/kernel.block](./screenshot.png)
 
+Many things are going on here, in a short amount of space. Let us first
+summarize line by line.
+
+* Line 1: Compiling literal values.
+* Line 2: If/else statements, loops and variables.
+* Line 3: Decimal number constants.
+* Line 4: Logical operations, character and string constants.
+* Line 5: String output.
+* Line 6: String equality.
+* Line 7: Creation and lookup of associative lists.
+* Line 8: Integer output.
+* Line 9: Compiling and executing functions defined with associative lists.
+* Line 10: Example definition of such a function (factorial).
+* Line 11: Example of calling the factorial function.
+* Lines 12--15: Intentionally left blank.
+* Line 16: Terminate the program.
+
+Before going deeper into the code, let us start by describing the virtual
+machine.
+
+## Virtual machine
+
+This is fairly similar to a standard token-threaded Forth. There is a
+128-entry character lookup table starting at memory address 0. During
+execution, the following loop is repeated:
+
+    X = memory[IP]
+    IP = IP + 1
+    W = memory[(X % 128)*2 + 1]
+    CALL memory[(X % 128)*2]
+
+That is, the low 7 bits of each memory word determines the function to be
+executed.
+
+Above the lookup table there are data and return stacks, as in normal Forth,
+and then a single built-in H variable (corresponding to HERE in Forth) which
+contains a pointer to the first free address on the heap.
+
+Each memory word encodes one character of code, or an integer value
+of at lesat 16 bits. The editor maps color to memory words according to the
+following scheme.
+
+### Red characters
+
+Bits 0--6 are the ASCII character displayed. Thus, red characters are used to
+execute functions immediately. In practice, red code is used where you would
+be in interpretation mode in a traditional Forth, or for immediate words
+(macros). Since this is the only color where the ASCII value is in the low 7
+bits, red characters are also used for string literals, but they should
+generally not be executed.
+
+### Yellow characters
+
+Bits 0--6 encode the value 1. This appends to the heap the value of bits
+8--14 as a *red* character. Since red characters are executed directly, this
+corresponds to compiling a function call.
+The editor displays the contents of bits 8--14.
+
+### White characters
+
+Bits 0--6 encode the value 2. This appends to the heap the value of bits 8--14
+as a *yellow* character. Since yellow characters can be interpreted as
+compiling code, white characters compile code that compile code. White
+characters are reduced to yellow, which are reduced to red, which eventually
+produce some effect. The editor displays the contents of bits 8--14.
+
+### Cyan characters
+
+Bits 0--6 encode the value 3. This is a no-op and can be used for comments.
+The editor displays the contents of bits 8--14.
+
+### Magenta characters
+
+Bits 0--6 encode the value 4. This updates the character look-up table entry
+of the value in bits 8--14, so that the code field points to the machine code
+for ENTER, and data field points to the current IP+1. The effect of this is
+that whenever the same character occurs in red, the code immediately after the
+magenta character is executed. The editor displays the contents of bits 8--14.
+
+## Detailed walk-through
+
+### Line 1
+
+First we define the word `,` (comma). In traditional Forth, this would be:
+
+    : ,  HERE @  !  HERE @  1+  HERE ! ;
+
+Second, we define the word `#` which pushes the constant 0. It is defined as
+subtracting an arbitrary literal value (an L) from itself.
+
+Third, we define `.` which will be used as a macro for compiling literal values.
+Since there are no built-in constant expressions, the general strategy here is
+to compute all constant expressions in red at "compile time", followed by a
+red `.` in order to compile the sequence `LX` where `L` corresponds to LIT in
+Forth and X is the computed constant.
+
+### Line 2
+
+Here we define `[` and `]` which correspond to Forth BEGIN and AGAIN, i.e. an
+infinite loop. `[` simply pushes the current address being compiled to, and
+`]` compiles a jump (instruction: `J`) to that address. These are both
+intended to be used in red, which means that the `J` is white, so that the
+"compiled" code of `]` contains a yellow `J`, which once `]` is executed in
+another defintion results in a red `J` in the compiled code of that
+definition.
+
+`{` and `\|` and `}` correspond to IF, ELSE, THEN in standard Forth. They are
+also meant to be used in red, and similar to `]` eventually reduce to a
+sequence of conditional `?` and unconditional `J` jumps.
+
+Finally we define `$` which saves the given value to the heap, and compiles
+code that pushes the address of that value. It is similar to VARIABLE in
+Forth, except that the initial value of the variable should be given.
+
 ## Native words
+
+Below are the words defined in `core.c`.
 
 | Op  | Forth | Arguments | Description
 | --- | ----- | --------- | ----------
@@ -35,6 +157,9 @@ of the editor, viewing a 64x32 block of source code.
 | ? | ?BRANCH | b --      | word at IP+1 -> IP if TOS is zero
 
 ## Kernel definitions
+
+This is a summary of the words defined in the code block, several of them are
+described in more detail above.
 
 | Op  | Forth | Arguments | Description
 | --- | ----- | --------- | ----------
