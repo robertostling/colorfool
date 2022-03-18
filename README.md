@@ -133,6 +133,35 @@ Note that after defining loops and conditionals, as well as variables, there
 is still space left on the 64-character line! I also left some (cyan) blank
 spaces in the code for readability.
 
+### Line 3
+
+Integers are encoded by first executing `#` to push 0 to the stack, then the
+digits 0--9 multiply the current TOS (top of stack) by 10, followed by adding
+up to 9. The digits call each other, which may seem rather inefficient, but
+normally numbers are written in red followed by a red `.` (see line 1 above),
+so at runtime the integer constant is already stored in a single word. See for
+instance on line 4, where `#127.` is used.
+
+### Line 4
+
+Logical negation (`N`) is defined using a conditional expression. A literal
+translation to Forth would be:
+
+    : N  IF 0 ELSE 0 1+ THEN ;
+
+Equality (`=`) is simply negated subtraction.
+
+String constants are implemented using `"` which pushes the current IP (i.e.
+the address of the character after `"`) and computes the number of characters
+until the following `"`. It then puts the address of the following character
+on the return stack, to make execution continue from there. The string
+constant is thus physically stored directly as part of the "source" code.
+
+Note that single letter literals can be pushed by putting a red `L` in front
+of them. Currently there is a redundant implementation of this using `C`,
+which also masks out the high bits (but if the letter literal is red, this is
+not needed).
+
 ## Native words
 
 Below are the words defined in `core.c`.
@@ -184,6 +213,5 @@ described in more detail above.
 | A |         | a1 n a2 -- a3 | lookup string (a1 n) in dictionary (a2)
 | W | CR      | --        | print a newline
 | T | TYPE    | a n --    | print a string
-| C | [CHAR]  | -- c      | push the following (red) character
 | " | S"      | -- a n    | literal string (note: not compiling anything)
 | $ | VARIABLE | x --     | global variable
