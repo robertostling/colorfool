@@ -4,15 +4,16 @@ This is a simple programming language based on Chuck Moore's colorForth as
 well as my own FOOL (Forth On One Line) language. The main novelty is the use
 of (sort of) human-readable machine level code, and the compiler consists of
 source/machine code translating itself into more efficient source/machine
-code. In its current virtual machine implementation, it can also be viewed as
-a special kind of token-threaded Forth interpreter.
+code. It can also be viewed as a special kind of token-threaded Forth
+interpreter.
 
 To make the above more concrete, we start with a screenshot
 of the editor. In the Forth tradition, this is viewing a 64x32 block of code.
+The "E compile" at the bottom is part of the editor, not code.
 
 ![Contents of blocks/kernel.block](./screenshot.png)
 
-Many things are going on here, in a short amount of space. Let us first
+Many things are going on here, in a small amount of space. Let us first
 summarize line by line.
 
 * Line 1: Compiling literal values.
@@ -44,11 +45,13 @@ execution, the following loop is repeated:
     CALL memory[(X % 128)*2]
 
 That is, the low 7 bits of each memory word determines the function to be
-executed.
+executed. The CALL is a machine instruction, and in the current implementation
+it is used to call functions defined in C (see `core.c`).
 
-Above the lookup table there are data and return stacks, as in normal Forth,
+After the lookup table there are data and return stacks, as in normal Forth,
 and then a single built-in H variable (corresponding to HERE in Forth) which
-contains a pointer to the first free address on the heap.
+contains a pointer to the first free address on the heap. At the beginning,
+this is the address immediately following H itself.
 
 Each memory word encodes one character of code, or an integer value
 of at lesat 16 bits. The editor maps color to memory words according to the
@@ -118,13 +121,17 @@ intended to be used in red, which means that the `J` is white, so that the
 another defintion results in a red `J` in the compiled code of that
 definition.
 
-`{` and `\|` and `}` correspond to IF, ELSE, THEN in standard Forth. They are
+`{` and `|` and `}` correspond to IF, ELSE, THEN in standard Forth. They are
 also meant to be used in red, and similar to `]` eventually reduce to a
 sequence of conditional `?` and unconditional `J` jumps.
 
 Finally we define `$` which saves the given value to the heap, and compiles
 code that pushes the address of that value. It is similar to VARIABLE in
 Forth, except that the initial value of the variable should be given.
+
+Note that after defining loops and conditionals, as well as variables, there
+is still space left on the 64-character line! I also left some (cyan) blank
+spaces in the code for readability.
 
 ## Native words
 
